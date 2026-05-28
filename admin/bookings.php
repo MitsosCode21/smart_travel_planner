@@ -22,13 +22,24 @@ try {
         exit();
     }
 
-    // --- ΑΛΛΑΓΗ ΚΑΤΑΣΤΑΣΗΣ ΚΡΑΤΗΣΗΣ ---
-    if (isset($_POST['update_status'])) {
-        $st_id = intval($_POST['reservation_id']);
-        $new_status = trim($_POST['status']);
-        $upd_stmt = $pdo->prepare("UPDATE reservations SET status = ? WHERE id = ?");
-        $upd_stmt->execute([$new_status, $st_id]);
-        header("Location: bookings.php?msg=status_updated");
+    // --- ΠΛΗΡΗΣ ΕΠΕΞΕΡΓΑΣΙΑ ΚΡΑΤΗΣΗΣ ---
+    if (isset($_POST['update_booking'])) {
+        $bk_id       = intval($_POST['reservation_id']);
+        $new_checkin  = trim($_POST['check_in']);
+        $new_checkout = trim($_POST['check_out']);
+        $new_persons  = intval($_POST['persons']);
+        $new_price    = floatval($_POST['total_price']);
+        $new_method   = trim($_POST['payment_method']);
+        $new_status   = trim($_POST['status']);
+
+        $upd_stmt = $pdo->prepare("
+            UPDATE reservations 
+            SET check_in = ?, check_out = ?, persons = ?, 
+                total_price = ?, payment_method = ?, status = ? 
+            WHERE id = ?
+        ");
+        $upd_stmt->execute([$new_checkin, $new_checkout, $new_persons, $new_price, $new_method, $new_status, $bk_id]);
+        header("Location: bookings.php?msg=booking_updated");
         exit();
     }
 
@@ -94,6 +105,7 @@ try {
 
         .msg-box { padding: 15px 20px; border-radius: 10px; margin-bottom: 20px; font-weight: 700; background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0;}
         .msg-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;}
+        .msg-info { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd;}
 
         /* Table */
         .table-container { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 4px solid var(--secondary);}
@@ -142,7 +154,10 @@ try {
         /* Status Modal */
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 12px; font-weight: 800; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase;}
-        .form-group select { width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid var(--border); font-family: inherit; font-size: 14px; outline: none;}
+        .form-group select, .form-group input { width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid var(--border); font-family: inherit; font-size: 14px; outline: none; box-sizing: border-box; transition: 0.2s;}
+        .form-group select:focus, .form-group input:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1);}
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-divider { border: none; border-top: 1px dashed var(--border); margin: 20px 0; }
     </style>
 </head>
 <body>
@@ -185,6 +200,8 @@ try {
             <div class="msg-box msg-error">✔️ Η κράτηση διαγράφηκε οριστικά!</div>
         <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'status_updated'): ?>
             <div class="msg-box">✔️ Η κατάσταση της κράτησης ενημερώθηκε!</div>
+        <?php elseif(isset($_GET['msg']) && $_GET['msg'] == 'booking_updated'): ?>
+            <div class="msg-box msg-info">✔️ Η κράτηση ενημερώθηκε επιτυχώς!</div>
         <?php endif; ?>
 
         <div class="table-container">
@@ -256,7 +273,7 @@ try {
 
                                     <button type="button" class="btn-action btn-view" onclick="openViewModal('<?php echo $bk['id']; ?>')">👁️</button>
                                     
-                                    <button type="button" class="btn-action btn-status" onclick="openStatusModal('<?php echo $bk['id']; ?>', '<?php echo htmlspecialchars($bk['status']); ?>')">✏️ Κατάσταση</button>
+                                    <button type="button" class="btn-action btn-status" onclick="openEditModal('<?php echo $bk['id']; ?>', '<?php echo $bk['check_in']; ?>', '<?php echo $bk['check_out']; ?>', '<?php echo $bk['persons']; ?>', '<?php echo $bk['total_price']; ?>', '<?php echo htmlspecialchars($bk['payment_method'] ?? ''); ?>', '<?php echo htmlspecialchars($bk['status']); ?>')">✏️ Επεξεργασία</button>
 
                                     <form method="POST" style="display:inline;" onsubmit="return confirm('⚠️ Είστε σίγουροι ότι θέλετε να διαγράψετε οριστικά την κράτηση #<?php echo $bk['id']; ?>;');">
                                         <input type="hidden" name="delete_id" value="<?php echo $bk['id']; ?>">
@@ -296,23 +313,62 @@ try {
         </div>
     </div>
 
-    <div class="modal-overlay" id="statusModal">
-        <div class="modal-content" style="max-width: 400px;">
-            <h2 class="modal-title">Αλλαγή Κατάστασης</h2>
+    <div class="modal-overlay" id="editModal">
+        <div class="modal-content" style="max-width: 550px;">
+            <h2 class="modal-title">
+                Επεξεργασία Κράτησης <span id="edit_modal_id" style="color: var(--secondary);"></span>
+                <button class="modal-close" onclick="closeEditModal()">✖</button>
+            </h2>
             <form method="POST" action="bookings.php">
-                <input type="hidden" name="reservation_id" id="modal_status_res_id">
+                <input type="hidden" name="reservation_id" id="edit_res_id">
                 
-                <div class="form-group">
-                    <label>Τρέχουσα Κατάσταση</label>
-                    <select name="status" id="modal_status_select" required>
-                        <option value="Επιβεβαιώθηκε">Επιβεβαιώθηκε</option>
-                        <option value="Ακυρώθηκε">Ακυρώθηκε</option>
-                    </select>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📅 Check-in</label>
+                        <input type="date" name="check_in" id="edit_checkin" required>
+                    </div>
+                    <div class="form-group">
+                        <label>📅 Check-out</label>
+                        <input type="date" name="check_out" id="edit_checkout" required>
+                    </div>
                 </div>
 
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" class="btn-action btn-status" onclick="closeStatusModal()" style="padding: 10px 15px;">Ακύρωση</button>
-                    <button type="submit" name="update_status" class="btn-action btn-view" style="padding: 10px 15px;">Αποθήκευση</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>👤 Άτομα</label>
+                        <input type="number" name="persons" id="edit_persons" min="1" max="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label>💰 Συνολικό Ποσό (€)</label>
+                        <input type="number" name="total_price" id="edit_price" step="0.01" min="0" required>
+                    </div>
+                </div>
+
+                <hr class="form-divider">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>💳 Τρόπος Πληρωμής</label>
+                        <select name="payment_method" id="edit_method">
+                            <option value="Άμεση Πληρωμή (Κάρτα)">Άμεση Πληρωμή (Κάρτα)</option>
+                            <option value="Πληρωμή 3 μέρες πριν">Πληρωμή 3 μέρες πριν</option>
+                            <option value="Πληρωμή στο Κατάλυμα">Πληρωμή στο Κατάλυμα</option>
+                            <option value="Digital Pay (Apple/PayPal)">Digital Pay (Apple/PayPal)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>📋 Κατάσταση</label>
+                        <select name="status" id="edit_status" required>
+                            <option value="Επιβεβαιώθηκε">Επιβεβαιώθηκε</option>
+                            <option value="Ακυρώθηκε">Ακυρώθηκε</option>
+                            <option value="Σε Εκκρεμότητα">Σε Εκκρεμότητα</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="text-align: right; margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn-action btn-status" onclick="closeEditModal()" style="padding: 10px 20px;">Ακύρωση</button>
+                    <button type="submit" name="update_booking" class="btn-action btn-view" style="padding: 10px 20px; background: #3b82f6; color: white; border-color: #2563eb;">💾 Αποθήκευση</button>
                 </div>
             </form>
         </div>
@@ -355,15 +411,21 @@ try {
             viewModal.classList.remove('active');
         }
 
-        // Modal Κατάστασης
-        const statusModal = document.getElementById('statusModal');
-        function openStatusModal(id, current_status) {
-            document.getElementById('modal_status_res_id').value = id;
-            document.getElementById('modal_status_select').value = current_status;
-            statusModal.classList.add('active');
+        // Modal Επεξεργασίας
+        const editModal = document.getElementById('editModal');
+        function openEditModal(id, checkin, checkout, persons, price, method, status) {
+            document.getElementById('edit_res_id').value = id;
+            document.getElementById('edit_modal_id').innerText = '#' + id;
+            document.getElementById('edit_checkin').value = checkin;
+            document.getElementById('edit_checkout').value = checkout;
+            document.getElementById('edit_persons').value = persons;
+            document.getElementById('edit_price').value = parseFloat(price).toFixed(2);
+            document.getElementById('edit_method').value = method;
+            document.getElementById('edit_status').value = status;
+            editModal.classList.add('active');
         }
-        function closeStatusModal() {
-            statusModal.classList.remove('active');
+        function closeEditModal() {
+            editModal.classList.remove('active');
         }
     </script>
 </body>
