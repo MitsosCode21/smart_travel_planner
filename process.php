@@ -365,7 +365,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if (mb_strpos($dest['name_gr'], $keyword) !== false) { $is_island = true; break; }
             }
 
-            $transport = $is_island ? "Πλοίο ή Πτήση" : "ΚΤΕΛ / ΙΧ";
+            $transport = $is_island ? (($lang=='en') ? "Ferry or Flight" : "Πλοίο ή Πτήση") : (($lang=='en') ? "Bus / Car" : "ΚΤΕΛ / ΙΧ");
             
             if ($is_alt) {
                 $badge_class = 'badge-alt';
@@ -392,17 +392,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             echo '      <h2 class="destination-name">' . htmlspecialchars($dest_name) . '</h2>';
             echo '      <p class="description">' . htmlspecialchars($dest_desc) . '</p>';
 
+            // Μετάφραση κατηγορίας όπως στο destination.php
+            $type_map_en = ['Ιστορικός' => 'Historical', 'Ρομαντικός' => 'Romantic', 'Οικογενειακός' => 'Family', 'Διασκέδαση' => 'Nightlife', 'Φύση' => 'Nature'];
+            $display_type = ($lang == 'en' && isset($type_map_en[$dest['vacation_type']])) ? $type_map_en[$dest['vacation_type']] : $dest['vacation_type'];
+            
+            $cat_label = ($lang == 'gr') ? 'Κατηγορια' : 'Category';
+            $acc_label = ($lang == 'gr') ? 'Προσβαση' : 'Access';
+            $weather_label = ($lang == 'gr') ? 'ΚΑΙΡΟΣ LIVE (ΤΩΡΑ)' : 'LIVE WEATHER (NOW)';
+            $loading_text = ($lang == 'gr') ? '⏳ Φόρτωση...' : '⏳ Loading...';
+
             echo '      <div class="info-grid">';
-            echo '          <div class="info-box"><span>Κατηγορια</span><strong>📌 ' . htmlspecialchars($dest['vacation_type']) . '</strong></div>';
-            echo '          <div class="info-box"><span>Προσβαση</span><strong>🗺️ ' . htmlspecialchars($transport) . '</strong></div>';
+            echo '          <div class="info-box"><span>' . $cat_label . '</span><strong>📌 ' . htmlspecialchars($display_type) . '</strong></div>';
+            echo '          <div class="info-box"><span>' . $acc_label . '</span><strong>🗺️ ' . htmlspecialchars($transport) . '</strong></div>';
             // 🚀 FEATURE ΠΤΥΧΙΑΚΗΣ: Ο ΚΑΙΡΟΣ
-            echo '          <div class="info-box weather-box"><span>ΚΑΙΡΟΣ LIVE (ΤΩΡΑ)</span><strong id="weather-' . $dest['id'] . '">⏳ Φόρτωση...</strong></div>';
+            echo '          <div class="info-box weather-box"><span>' . $weather_label . '</span><strong id="weather-' . $dest['id'] . '">' . $loading_text . '</strong></div>';
             echo '      </div>';
 
             $bg_cost_area = ($remaining_budget < 0) ? "background: #fef2f2; border-color: #fca5a5;" : "";
+            $living_label = ($lang == 'gr') ? ' (Διαβίωση)' : ' (Living)';
             echo '      <div class="cost-area" style="' . $bg_cost_area . '">';
             echo '          <div class="cost-row">';
-            echo '              <span class="c-label">' . $t['cost_label'] . ' (Διαβίωση)</span>';
+            echo '              <span class="c-label">' . $t['cost_label'] . $living_label . '</span>';
             echo '              <span class="c-val">' . number_format($total_cost, 0) . '€</span>';
             echo '          </div>';
             echo '          <div class="cost-row">';
@@ -479,7 +489,7 @@ async function fetchWeatherForCity(city, elementId) {
 
     // FALLBACK: Ίδιο εύρος για παντού (18-26°C)
     const randomTemp = Math.floor(Math.random() * (26 - 18 + 1)) + 18; 
-    const conditions = ["☀️ Ηλιοφάνεια", "⛅ Αραιή Συννεφιά", "☁️ Συννεφιά"];
+    const conditions = <?php echo ($lang == 'gr') ? '["☀️ Ηλιοφάνεια", "⛅ Αραιή Συννεφιά", "☁️ Συννεφιά"]' : '["☀️ Sunny", "⛅ Partly Cloudy", "☁️ Cloudy"]'; ?>;
     const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
     weatherElement.innerText = `${randomCondition} (+${randomTemp}°C)`;
 }
