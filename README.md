@@ -27,7 +27,7 @@
 3. Ανοίξτε το XAMPP Control Panel → **Start** Apache και MySQL
 4. Ανοίξτε [http://localhost/phpmyadmin](http://localhost/phpmyadmin)
 5. Δημιουργήστε νέα βάση με όνομα **`smart_travel_planner`** (collation: `utf8mb4_general_ci`)
-6. Επιλέξτε τη βάση → **Import** → επιλέξτε το αρχείο `smart_travel_planner.sql` → **Go**
+6. Επιλέξτε τη βάση → **Import** → επιλέξτε το αρχείο `database/smart_travel_planner.sql` → **Go**
 7. Ανοίξτε στον browser: **http://localhost/smart_travel_planner/**
 
 ---
@@ -65,7 +65,9 @@ smart_travel_planner/
 ├── index.php                   # Αρχική σελίδα – Φόρμα αναζήτησης
 ├── process.php                 # Αλγόριθμος φιλτραρίσματος & αποτελέσματα
 ├── profile.php                 # Προφίλ – Ιστορικό κρατήσεων & E-Tickets
-├── smart_travel_planner.sql    # Βάση δεδομένων
+│
+├── database/
+│   └── smart_travel_planner.sql  # Βάση δεδομένων (7 πίνακες, 971 εγγραφές)
 │
 ├── auth/
 │   ├── login.php               # Σύνδεση
@@ -80,7 +82,7 @@ smart_travel_planner/
 │   ├── destination.php         # Σελίδα προορισμού
 │   ├── contact.php             # Επικοινωνία
 │   ├── about.php / about_us.php
-│   ├── support.php, privacy.php, terms.php, cookies.php
+│   └── support.php, privacy.php, terms.php, cookies.php
 │
 └── admin/
     ├── dashboard.php           # Στατιστικά & γράφημα εσόδων
