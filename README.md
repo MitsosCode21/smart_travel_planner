@@ -15,7 +15,7 @@
 ## Τεχνολογίες
 
 **Backend:** PHP 8.x | **Βάση:** MySQL/MariaDB (PDO) | **Frontend:** HTML5, CSS3, JavaScript  
-**Εξωτερικά:** Google Fonts (Inter), Chart.js, html2canvas, wttr.in Weather API  
+**Εξωτερικά:** Google Fonts (Inter), Chart.js, Leaflet.js, html2canvas, wttr.in Weather API  
 **Server:** XAMPP (Apache + MySQL)
 
 ---
