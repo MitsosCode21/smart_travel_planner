@@ -1,4 +1,5 @@
 <?php
+session_cache_limiter('private_no_expire');
 session_start();
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit(); }
 

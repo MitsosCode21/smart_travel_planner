@@ -1,4 +1,5 @@
 <?php
+session_cache_limiter('private_no_expire');
 session_start();
 $lang = isset($_GET['lang']) ? $_GET['lang'] : 'gr';
 

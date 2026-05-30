@@ -1,4 +1,5 @@
 <?php
+session_cache_limiter('private_no_expire');
 session_start();
 if (!isset($_SESSION['user_id'])) { header("Location: ../auth/login.php"); exit(); }
 
@@ -410,7 +411,7 @@ function getRealisticRouting($type, $dest, $is_return = false) {
         </svg>
         <h2>Smart Travel Planner</h2>
     </div>
-    <a href="javascript:history.back()" class="btn-cancel">
+    <a href="booking.php?id=<?php echo $id; ?>&days=<?php echo $days; ?>&persons=<?php echo $persons; ?>&budget=<?php echo $budget; ?>&lang=<?php echo $lang; ?>" class="btn-cancel">
         <?php echo $t_lang['back_btn']; ?>
     </a>
 </header>
